@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: node-app
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/arunbaghel11/basic-node-app"
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
