@@ -8,15 +8,20 @@ pipeline {
         stage("Build") {
             steps {
                 script {
-                    def app = docker.build("${DOCKER_HUB_REPO}:${IMAGE_TAG}")
+                    // Define app at a higher scope
+                    def dockerImage = docker.build("${DOCKER_HUB_REPO}:${IMAGE_TAG}")
+                    // Store the image for later use
+                    stash name: 'dockerImage', includes: 'dockerImage'
                 }
             }
         }
         stage("Push to DockerHub") {
             steps {
                 script {
-                    docker.withRegistry("", "dockerhub") {
-                        app.push()
+                    // Retrieve the stashed image
+                    unstash 'dockerImage'
+                    docker.withRegistry("https://index.docker.io/v1/", "dockerhub") {
+                        dockerImage.push()
                     }
                 }
             }
@@ -24,10 +29,18 @@ pipeline {
         stage("Deploy to k3d Cluster") {
             steps {
                 script {
-                    kubectl.apply("-f k8s/deployment.yaml")
+                    // Use kubectl command directly
+                    sh 'kubectl apply -f k8s/deployment.yaml'
                 }
             }
         }
     }
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed! Check the logs for details.'
+        }
+    }
 }
-
