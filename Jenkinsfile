@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_HUB_REPO = 'arun662/basic-node-app'
+        DOCKER_HUB_REPO = 'arun318/basic-node-app'
         IMAGE_TAG = 'latest'
         DOCKER_USERNAME = 'arun318'
         DOCKER_PASSWORD = 'arunbaghel12'
