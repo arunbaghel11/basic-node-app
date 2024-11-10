@@ -4,8 +4,8 @@ pipeline {
     environment {
         DOCKER_HUB_REPO = 'arun662/basic-node-app'
         IMAGE_TAG = 'latest'
-        // Use Docker Hub credentials more securely
-        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials-id'
+        DOCKER_USERNAME = 'arun318'
+        DOCKER_PASSWORD = 'arunbaghel12'
     }
     
     stages {
@@ -32,17 +32,11 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials-id',
-                        usernameVariable: 'arun662',
-                        passwordVariable: 'arunbaghel12'
-                    )]) {
-                        sh '''
-                            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                            docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}
-                            docker logout
-                        '''
-                    }
+                    sh """
+                        echo '${DOCKER_PASSWORD}' | docker login -u '${DOCKER_USERNAME}' --password-stdin
+                        docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}
+                        docker logout
+                    """
                 }
             }
         }
