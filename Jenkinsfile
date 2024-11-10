@@ -32,14 +32,12 @@ pipeline {
                 script {
                     // Login to Docker Hub using the credential ID 'dockerhub-credentials-id'
                     docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials-id') {
-                     app = docker.build("${DOCKER_HUB_REPO}:${IMAGE_TAG}")
-        }
-
-    
+                        app.push()  // Push the image to Docker Hub
                     }
                 }
             }
         }
+        
         stage('Deploy to k3d Cluster') {
             steps {
                 script {
