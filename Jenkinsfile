@@ -1,28 +1,30 @@
 pipeline {
     agent any
+    
     environment {
         DOCKER_HUB_REPO = 'arun662/basic-node-app'
         IMAGE_TAG = 'latest'
+        // Use Docker Hub credentials more securely
+        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials-id'
     }
+    
     stages {
         stage('Checkout') {
             steps {
-                // Checkout code from GitHub using the credential ID 'github'
                 checkout([$class: 'GitSCM', 
-                          branches: [[name: '*/main']], 
-                          doGenerateSubmoduleConfigurations: false, 
-                          extensions: [], 
-                          userRemoteConfigs: [[url: 'https://github.com/arunbaghel11/basic-node-app.git', 
-                                               credentialsId: 'github']]
-                         ])
+                    branches: [[name: '*/main']], 
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/arunbaghel11/basic-node-app.git',
+                        credentialsId: 'github'
+                    ]]
+                ])
             }
         }
         
         stage('Build') {
             steps {
                 script {
-                    // Build Docker image
-                    app = docker.build("${DOCKER_HUB_REPO}:${IMAGE_TAG}")
+                    sh "docker build -t ${DOCKER_HUB_REPO}:${IMAGE_TAG} ."
                 }
             }
         }
@@ -30,9 +32,16 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 script {
-                    // Login to Docker Hub using the credential ID 'dockerhub-credentials-id'
-                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub-credentials-id') {
-                        app.push()  // Push the image to Docker Hub
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-credentials-id',
+                        usernameVariable: 'arun662',
+                        passwordVariable: 'arunbaghel12'
+                    )]) {
+                        sh '''
+                            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                            docker push ${DOCKER_HUB_REPO}:${IMAGE_TAG}
+                            docker logout
+                        '''
                     }
                 }
             }
@@ -41,10 +50,15 @@ pipeline {
         stage('Deploy to k3d Cluster') {
             steps {
                 script {
-                    // Apply Kubernetes deployment configuration to k3d cluster
-                    kubectl.apply("-f k8s/deployment.yaml")
+                    sh 'kubectl apply -f k8s/deployment.yaml'
                 }
             }
+        }
+    }
+    
+    post {
+        always {
+            sh 'docker logout'
         }
     }
 }
